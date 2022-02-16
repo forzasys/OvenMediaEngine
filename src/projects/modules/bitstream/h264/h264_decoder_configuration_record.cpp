@@ -23,13 +23,13 @@ bool AVCDecoderConfigurationRecord::Parse(const uint8_t *data, size_t data_lengt
 	record._reserved1 = parser.ReadBits<uint8_t>(6);
 	if (record._reserved1 != 0b111111)
 	{
-		return false;
+		// return false;
 	}
 	record._lengthMinusOne = parser.ReadBits<uint8_t>(2);
 	record._reserved2 = parser.ReadBits<uint8_t>(3);
 	if (record._reserved2 != 0b111)
 	{
-		return false;
+		// return false;
 	}
 
 	record._num_of_sps = parser.ReadBits<uint8_t>(5);
