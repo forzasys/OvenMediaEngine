@@ -183,7 +183,7 @@ RUN \
         DIR=/tmp/ome && \
         mkdir -p ${DIR} && \
         cd ${DIR} && \
-        curl -sLf https://github.com/AirenSoft/OvenMediaEngine/archive/${OME_VERSION}.tar.gz | tar -xz --strip-components=1 && \
+        curl -sLf https://github.com/forzasys/OvenMediaEngine/archive/0.12.11-fs.tar.gz | tar -xz --strip-components=1 && \
         cd src && \
         make release
 
