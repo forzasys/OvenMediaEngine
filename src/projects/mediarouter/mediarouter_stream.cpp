@@ -392,7 +392,24 @@ bool MediaRouteStream::ProcessH264AnnexBStream(std::shared_ptr<MediaTrack> &medi
 		{
 			has_idr = true;
 			media_packet->SetFlag(MediaPacketFlag::Key);
-		}
+		} else if (nal_header.GetNalUnitType() == H264NalUnitType::Sei) {
+//            logti("--- Hmm, this is a SEI NAL with offset %d and offset_length %d", offset, offset_length);
+            auto nalu = std::make_shared<ov::Data>(bitstream + offset, offset_length);
+            auto raw_nalu = (uint8_t *)nalu->GetData();
+            auto sei_type = raw_nalu+1;
+            if (*sei_type == 0x01) {
+                // This is a timing SEI
+                int32_t n_frames = *(raw_nalu+12) & 0xff;
+                int32_t seconds = (*(raw_nalu+13) & 0xff) >> 2;
+                int32_t minutes = ((*(raw_nalu+13) & 0x03) << 4) | ((*(raw_nalu+14) & 0xf0) >> 4);
+                int32_t hours = ((*(raw_nalu+14) & 0x0f) << 1) | ((*(raw_nalu+15) & 0x80) >> 7);
+                logti("-- Timing SEI (length: %d bytes) #%d %02d:%02d:%02d",
+                      offset_length, n_frames, hours, minutes, seconds);
+                media_packet->SetTimingSEI(n_frames, seconds, minutes, hours);
+            } else {
+//                logti("-- Not a timing SEI %02x", sei_type && 0xff);
+            }
+        }
 
 		// Last NalU
 		if (pos == -1)

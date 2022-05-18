@@ -180,6 +180,25 @@ public:
 		_flag = flag;
 	}
 
+    int32_t GetNFramesSEI() const noexcept {
+        return _sei_n_frames;
+    }
+    int32_t GetSecondsSEI() const noexcept {
+        return _sei_seconds;
+    }
+    int32_t GetMinutesSEI() const noexcept {
+        return _sei_minutes;
+    }
+    int32_t GetHoursSEI() const noexcept {
+        return _sei_hours;
+    }
+    void SetTimingSEI(int n_frames, int seconds, int minutes, int hours) {
+        _sei_n_frames = n_frames;
+        _sei_seconds = seconds;
+        _sei_minutes = minutes;
+        _sei_hours = hours;
+    }
+
 	cmn::BitstreamFormat GetBitstreamFormat() const noexcept
 	{
 		return _bitstream_format;
@@ -240,6 +259,11 @@ protected:
 	int32_t _track_id = -1;
 
 	std::shared_ptr<ov::Data> _data = nullptr;
+
+    int32_t _sei_n_frames = -1;
+    int32_t _sei_seconds = -1;
+    int32_t _sei_minutes = -1;
+    int32_t _sei_hours = -1;
 
 	int64_t _pts = -1LL;
 	int64_t _dts = -1LL;

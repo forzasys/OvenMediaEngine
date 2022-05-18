@@ -88,6 +88,23 @@ std::shared_ptr<const SegmentItem> SegmentQueue::Append(
 		data));
 }
 
+std::shared_ptr<const SegmentItem> SegmentQueue::Append(
+        SegmentDataType data_type, int sequence_number,
+        const ov::String &file_name,
+        int64_t timestamp, int64_t timestamp_in_ms,
+        int64_t duration, int64_t duration_in_ms,
+        int32_t sei_n_frames, int32_t sei_seconds, int32_t sei_minutes, int32_t sei_hours,
+        const std::shared_ptr<const ov::Data> &data)
+{
+    return Append(std::make_shared<SegmentItem>(
+            data_type, sequence_number,
+            file_name,
+            timestamp, timestamp_in_ms,
+            duration, duration_in_ms,
+            sei_n_frames, sei_seconds, sei_minutes, sei_hours,
+            data));
+}
+
 void SegmentQueue::Iterate(SegmentQueueIterator segment_iterator)
 {
 	std::lock_guard lock_guard(_segment_mutex);
