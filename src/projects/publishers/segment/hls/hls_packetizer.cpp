@@ -265,9 +265,29 @@ bool HlsPacketizer::AppendVideoPacket(const std::shared_ptr<const MediaPacket> &
 		{
 			result = WriteSegment(
 				first_pts, first_pts * _video_timebase_expr_ms,
-				duration, duration * _video_timebase_expr_ms);
+				duration, duration * _video_timebase_expr_ms,
+                _sei_n_frames, _sei_seconds, _sei_minutes, _sei_hours);
+
+            if (media_packet->GetNFramesSEI() != -1) {
+                _sei_n_frames = media_packet->GetNFramesSEI();
+                _sei_seconds = media_packet->GetSecondsSEI();
+                _sei_minutes = media_packet->GetMinutesSEI();
+                _sei_hours = media_packet->GetHoursSEI();
+            } else {
+                _sei_n_frames = -1;
+                _sei_seconds = -1;
+                _sei_minutes = -1;
+                _sei_hours = -1;
+            }
 		}
 	}
+
+    if (_sei_n_frames == -1 && media_packet->GetNFramesSEI() != -1) {
+        _sei_n_frames = media_packet->GetNFramesSEI();
+        _sei_seconds = media_packet->GetSecondsSEI();
+        _sei_minutes = media_packet->GetMinutesSEI();
+        _sei_hours = media_packet->GetHoursSEI();
+    }
 
 	result = result && _ts_writer.WritePacket(media_packet);
 
@@ -360,6 +380,12 @@ bool HlsPacketizer::AppendAudioPacket(const std::shared_ptr<const MediaPacket> &
 
 bool HlsPacketizer::WriteSegment(int64_t timestamp, int64_t timestamp_in_ms, int64_t duration, int64_t duration_in_ms)
 {
+    return WriteSegment(timestamp, timestamp_in_ms, duration, duration_in_ms, -1, -1, -1, -1);
+}
+
+bool HlsPacketizer::WriteSegment(int64_t timestamp, int64_t timestamp_in_ms, int64_t duration, int64_t duration_in_ms,
+                                 int32_t sei_n_frames, int32_t sei_seconds, int32_t sei_minutes, int32_t sei_hours)
+{
 	auto data = _ts_writer.Finalize();
 
 	if (data == nullptr)
@@ -373,6 +399,7 @@ bool HlsPacketizer::WriteSegment(int64_t timestamp, int64_t timestamp_in_ms, int
 	SetSegmentData(
 		timestamp, timestamp_in_ms,
 		duration, duration_in_ms,
+        sei_n_frames, sei_seconds, sei_minutes, sei_hours,
 		data);
 
 	if (_ts_writer.Prepare(GetServiceName()) == false)
@@ -403,6 +430,34 @@ bool HlsPacketizer::UpdatePlayList()
 			is_first = false;
 			first_sequence_number = segment_item->sequence_number;
 		}
+
+        if (segment_item->sei_n_frames != -1) {
+            // FIXME: This obviously doesn't work for other than live streams and might
+            //        be inaccurate around UTC day transitions
+            //        (depends on how well the producer and this systems clock sync)
+            std::time_t t = std::time(nullptr);
+            std::tm* now = std::gmtime(&t);
+            m3u8_play_list << "#EXT-X-PROGRAM-DATE-TIME:"
+                           << (now->tm_year + 1900) << '-'
+                           << std::setw(2) << std::setfill('0') << (now->tm_mon + 1) << '-'
+                           << std::setw(2) << std::setfill('0') << (now->tm_mday) << 'T'
+                           << std::setw(2) << std::setfill('0') << segment_item->sei_hours << ":"
+                           << std::setw(2) << std::setfill('0') << segment_item->sei_minutes << ":"
+                           << std::setw(2) << std::setfill('0') << segment_item->sei_seconds << ".000Z"
+                           << "\r\n";
+        } else if (first_sequence_number == segment_item->sequence_number) {
+            // Insert Program Date Time if not available from an input timestamp
+            std::time_t t = std::time(nullptr);
+            std::tm* now = std::gmtime(&t);
+            m3u8_play_list << "#EXT-X-PROGRAM-DATE-TIME:"
+                           << (now->tm_year + 1900) << '-'
+                           << std::setw(2) << std::setfill('0') << (now->tm_mon + 1) << '-'
+                           << std::setw(2) << std::setfill('0') << (now->tm_mday) << 'T'
+                           << std::setw(2) << std::setfill('0') << (now->tm_hour) << ":"
+                           << std::setw(2) << std::setfill('0') << (now->tm_min) << ":"
+                           << std::setw(2) << std::setfill('0') << (now->tm_sec) << ".000Z"
+                           << "\r\n";
+        }
 
 		m3u8_play_list << "#EXTINF:" << std::fixed << std::setprecision(0)
 					   << (segment_item->duration_in_ms / 1000) << "\r\n"
@@ -476,6 +531,13 @@ std::shared_ptr<const SegmentItem> HlsPacketizer::GetSegmentData(const ov::Strin
 
 bool HlsPacketizer::SetSegmentData(int64_t timestamp, int64_t timestamp_in_ms, int64_t duration, int64_t duration_in_ms, const std::shared_ptr<const ov::Data> &data)
 {
+    return SetSegmentData(timestamp, timestamp_in_ms, duration, duration_in_ms, -1, -1, -1, -1, data);
+}
+
+bool HlsPacketizer::SetSegmentData(int64_t timestamp, int64_t timestamp_in_ms, int64_t duration, int64_t duration_in_ms,
+                                   int32_t sei_n_frames, int32_t sei_seconds, int32_t sei_minutes, int32_t sei_hours,
+                                   const std::shared_ptr<const ov::Data> &data)
+{
 	auto file_name = ov::String::FormatString("%u.ts", _sequence_number);
 
 	auto segment_item = _video_segment_queue.Append(
@@ -483,6 +545,7 @@ bool HlsPacketizer::SetSegmentData(int64_t timestamp, int64_t timestamp_in_ms, i
 		file_name,
 		timestamp, timestamp_in_ms,
 		duration, duration_in_ms,
+        sei_n_frames, sei_seconds, sei_minutes, sei_hours,
 		data);
 
 	DumpSegmentToFile(segment_item);

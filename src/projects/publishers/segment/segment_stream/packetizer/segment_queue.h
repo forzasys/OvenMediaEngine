@@ -33,6 +33,13 @@ public:
 		int64_t timestamp, int64_t timestamp_in_ms,
 		int64_t duration, int64_t duration_in_ms,
 		const std::shared_ptr<const ov::Data> &data);
+    std::shared_ptr<const SegmentItem> Append(
+            SegmentDataType data_type, int sequence_number,
+            const ov::String &file_name,
+            int64_t timestamp, int64_t timestamp_in_ms,
+            int64_t duration, int64_t duration_in_ms,
+            int32_t sei_n_frames, int32_t sei_seconds, int32_t sei_minutes, int32_t sei_hours,
+            const std::shared_ptr<const ov::Data> &data);
 
 	// Change the discontinuity flag of last segment
 	void MarkAsDiscontinuity();

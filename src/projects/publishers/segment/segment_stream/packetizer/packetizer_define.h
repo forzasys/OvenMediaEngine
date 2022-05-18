@@ -67,6 +67,35 @@ public:
 	{
 	}
 
+    SegmentItem(
+            SegmentDataType type,
+            int sequence_number,
+            ov::String file_name,
+            int64_t timestamp,
+            int64_t timestamp_in_ms,
+            int64_t duration,
+            int64_t duration_in_ms,
+            int32_t sei_n_frames,
+            int32_t sei_seconds,
+            int32_t sei_minutes,
+            int32_t sei_hours,
+            const std::shared_ptr<const ov::Data> &data)
+            : creation_time(::time(nullptr)),
+              type(type),
+              sequence_number(sequence_number),
+              file_name(file_name),
+              timestamp(timestamp),
+              timestamp_in_ms(timestamp_in_ms),
+              duration(duration),
+              duration_in_ms(duration_in_ms),
+              sei_n_frames(sei_n_frames),
+              sei_seconds(sei_seconds),
+              sei_minutes(sei_minutes),
+              sei_hours(sei_hours),
+              data(data)
+    {
+    }
+
 public:
 	time_t creation_time = 0;
 
@@ -77,7 +106,11 @@ public:
 	int64_t timestamp_in_ms = 0L;
 	int64_t duration = 0L;
 	int64_t duration_in_ms = 0L;
-	std::shared_ptr<const ov::Data> data;
+    int32_t sei_n_frames = -1;
+    int32_t sei_seconds = -1;
+    int32_t sei_minutes = -1;
+    int32_t sei_hours = -1;
+    std::shared_ptr<const ov::Data> data;
 
 	bool discontinuity = false;
 };

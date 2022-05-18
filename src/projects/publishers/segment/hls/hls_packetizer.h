@@ -36,7 +36,10 @@ public:
 	bool AppendAudioPacket(const std::shared_ptr<const MediaPacket> &media_packet) override;
 
 	std::shared_ptr<const SegmentItem> GetSegmentData(const ov::String &file_name) const override;
-	bool SetSegmentData(int64_t timestamp, int64_t timestamp_in_ms, int64_t duration, int64_t duration_in_ms, const std::shared_ptr<const ov::Data> &data);
+	bool SetSegmentData(int64_t timestamp, int64_t timestamp_in_ms, int64_t duration, int64_t duration_in_ms,
+                        int32_t sei_n_frames, int32_t sei_seconds, int32_t sei_minutes, int32_t sei_hours,
+                        const std::shared_ptr<const ov::Data> &data);
+    bool SetSegmentData(int64_t timestamp, int64_t timestamp_in_ms, int64_t duration, int64_t duration_in_ms, const std::shared_ptr<const ov::Data> &data);
 
 protected:
 	void SetVideoTrack(const std::shared_ptr<MediaTrack> &video_track);
@@ -45,7 +48,9 @@ protected:
 	// Returns last_msid
 	uint32_t FlushIfNeeded();
 
-	bool WriteSegment(int64_t timestamp, int64_t timestamp_in_ms, int64_t duration, int64_t duration_in_ms);
+    bool WriteSegment(int64_t timestamp, int64_t timestamp_in_ms, int64_t duration, int64_t duration_in_ms);
+	bool WriteSegment(int64_t timestamp, int64_t timestamp_in_ms, int64_t duration, int64_t duration_in_ms,
+                      int32_t _sei_n_frames, int32_t _sei_seconds, int32_t _sei_minutes, int32_t _sei_hours);
 
 	bool UpdatePlayList();
 
@@ -60,6 +65,11 @@ protected:
 	uint32_t _sequence_number = 0U;
 	uint32_t _discontinuity_sequence_number = 0U;
 	uint32_t _last_discontinuity_count = 0U;
+
+    int32_t _sei_n_frames = -1;
+    int32_t _sei_seconds = -1;
+    int32_t _sei_minutes = -1;
+    int32_t _sei_hours = -1;
 
 	// To convert from timebase to seconds, multiply by these value
 	double _video_timebase_expr = 0.0;
